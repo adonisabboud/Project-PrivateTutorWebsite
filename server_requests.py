@@ -1,33 +1,42 @@
 import streamlit as st
 import requests
 import logging
+from dotenv import load_dotenv
+import os
+
+
+# Load environment variables
+load_dotenv()
+
+# Get BASE_URL from the .env file
+BASE_URL = os.getenv("BASE_URL")
+
+# Check if BASE_URL is loaded properly
+if not BASE_URL:
+    st.error("BASE_URL not found in the environment variables. Please configure it in your .env file.")
+    raise ValueError("BASE_URL is not set in the .env file.")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-
-# Helper Methods
 def handle_response(response, success_message=None):
-    """
-    Handle the API response and return parsed data or None.
-
-    Args:
-        response (requests.Response): The API response object.
-        success_message (str, optional): Message to show on success.
-
-    Returns:
-        dict or list: The parsed JSON response if successful; None otherwise.
-    """
-    if response.status_code in [200, 201]:
-        if success_message:
-            st.success(success_message)
-        return response.json()
-    else:
-        error_message = response.json().get("detail", "An error occurred.")
-        logger.error(f"API Error: {response.status_code} - {response.text}")
-        st.error(f"Error: {error_message}")
+    try:
+        if response.status_code in [200, 201]:
+            if success_message:
+                st.success(success_message)
+            return response.json()  # Return the parsed response
+        else:
+            # Handle error responses
+            error_message = response.json().get("message", response.text)
+            logger.error(f"API Error: {response.status_code} - {response.text}")
+            st.error(f"Error: {error_message}")
+            return None
+    except Exception as e:
+        logger.exception(f"Failed to handle API response: {e}")
+        st.error("An unexpected error occurred while processing the server response.")
         return None
+
 
 
 # API Interactions
@@ -44,17 +53,22 @@ def fetch_data(endpoint, params=None):
         return []
 
 
-def send_data(endpoint, data, method="POST"):
-    """Send data to an endpoint with method flexibility."""
+def send_data(endpoint, data=None, method="POST"):
     try:
-        headers = {"Authorization": f"Bearer {st.session_state.get('token', '')}"}
-        logger.info(f"Sending data to endpoint: {endpoint} using {method}")
+        headers = {
+            "Authorization": f"Bearer {st.session_state.get('token', '')}",
+            "Content-Type": "application/json"
+        }
         url = f"{BASE_URL}{endpoint}"
+        logger.info(f"Sending {method} request to {url} with data: {data}")
+
         response = requests.request(method, url, headers=headers, json=data)
+        logger.debug(f"API Response: {response.status_code} - {response.text}")
+
         return handle_response(response)
-    except Exception as e:
-        logger.exception(f"Exception occurred while sending data to {endpoint}: {e}")
-        st.error("An unexpected error occurred while sending data.")
+    except requests.exceptions.RequestException as e:
+        logger.exception(f"Request to {endpoint} failed: {e}")
+        st.error("A network error occurred. Please check your connection and try again.")
         return None
 
 
