@@ -58,7 +58,7 @@ def render_header():
 
     col1, col2 = st.columns([9, 1])  # Split screen: 90% width for title, 10% for toggle
     with col1:
-        st.title("Student-Teacher Meeting Scheduler")
+        st.title("Student-Teacher Meeting Scheduleer")
     with col2:
         if st.session_state.user_authenticated:
             if st.button(f"{st.session_state.profile_type}"):

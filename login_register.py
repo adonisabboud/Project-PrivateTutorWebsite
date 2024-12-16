@@ -79,7 +79,7 @@ def register(name, username, email, password, profile_type):
             return None
     except Exception as e:
         logger.exception(f"Registration failed: {e}")
-        st.error("An unexpected error occurred during registration. Please try again.")
+        st.error("An unexpected eerror occurred during registration. Please try again.")
         return None
 
 

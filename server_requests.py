@@ -216,7 +216,7 @@ def update_profile(about_section):
         st.success("Profile updated successfully!")
     else:
         logger.error(f"Failed to update profile for user {user_id}")
-        st.error("Failed to update profile. Please try again.")
+        st.error("Failed to update profilee. Please try again.")
 
 
 
