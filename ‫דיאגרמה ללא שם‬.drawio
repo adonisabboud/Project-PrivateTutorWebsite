@@ -24,8 +24,17 @@
         <mxCell id="sqjv3KcxAam_sozWtUgp-18" value="&lt;font style=&quot;font-size: 36px;&quot;&gt;teacher functionalities&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="sqjv3KcxAam_sozWtUgp-17">
           <mxGeometry x="80" y="10" width="380" height="30" as="geometry" />
         </mxCell>
+        <mxCell id="sqjv3KcxAam_sozWtUgp-27" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;" edge="1" parent="1" source="sqjv3KcxAam_sozWtUgp-19">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="50" y="1080" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="60" y="1100" />
+              <mxPoint x="50" y="1100" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
         <mxCell id="sqjv3KcxAam_sozWtUgp-19" value="" style="whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
-          <mxGeometry x="60" y="630" width="580" height="580" as="geometry" />
+          <mxGeometry x="60" y="630" width="720" height="720" as="geometry" />
         </mxCell>
         <mxCell id="sqjv3KcxAam_sozWtUgp-21" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;FrontEnd (UI) Streamlit Application&lt;/h1&gt;&lt;p&gt;&lt;br&gt;&lt;/p&gt;" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="70" y="660" width="430" height="40" as="geometry" />
@@ -33,10 +42,10 @@
         <mxCell id="sqjv3KcxAam_sozWtUgp-22" value="&lt;font style=&quot;font-size: 24px;&quot;&gt;User actions:&amp;nbsp;Register, Login, Schedule Meetings&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="100" y="715" width="300" height="95" as="geometry" />
         </mxCell>
-        <mxCell id="sqjv3KcxAam_sozWtUgp-23" value="" style="shape=link;html=1;rounded=0;exitX=0.023;exitY=0.591;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.31;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" target="sqjv3KcxAam_sozWtUgp-19">
+        <mxCell id="sqjv3KcxAam_sozWtUgp-23" value="" style="shape=link;html=1;rounded=0;exitX=0.023;exitY=0.591;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1">
           <mxGeometry width="100" relative="1" as="geometry">
             <mxPoint x="59.99999999999989" y="810" as="sourcePoint" />
-            <mxPoint x="489.88" y="810" as="targetPoint" />
+            <mxPoint x="744" y="810" as="targetPoint" />
             <Array as="points" />
           </mxGeometry>
         </mxCell>
@@ -48,6 +57,18 @@
         </mxCell>
         <mxCell id="sqjv3KcxAam_sozWtUgp-25" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Backend : FastAPI + Python&amp;nbsp;&lt;/h1&gt;&lt;div&gt;&lt;font style=&quot;font-size: 24px;&quot;&gt;Authentication&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font style=&quot;font-size: 24px;&quot;&gt;User Management&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font style=&quot;font-size: 24px;&quot;&gt;Meeting Scheduling&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font style=&quot;font-size: 24px;&quot;&gt;Profile Management&amp;nbsp;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
           <mxGeometry x="80" y="890" width="550" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="sqjv3KcxAam_sozWtUgp-30" value="" style="shape=link;html=1;rounded=0;entryX=0.998;entryY=0.791;entryDx=0;entryDy=0;entryPerimeter=0;exitX=-0.002;exitY=0.795;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1">
+          <mxGeometry width="100" relative="1" as="geometry">
+            <mxPoint x="58.559999999999945" y="1082.88" as="sourcePoint" />
+            <mxPoint x="778.56" y="1080" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="400" y="1082.48" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sqjv3KcxAam_sozWtUgp-31" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;&amp;nbsp;Database : mongoDB&lt;/h1&gt;" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="70" y="1110" width="590" height="120" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
