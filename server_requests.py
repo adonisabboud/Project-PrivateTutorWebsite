@@ -220,3 +220,19 @@ def update_profile(about_section):
 
 
 
+def fetch_user_meetings(user_id):
+    """Fetch and filter meetings where the user is a participant."""
+    try:
+        response = fetch_data("/meetings/")  # Fetch all meetings
+        if not response or not isinstance(response, list):
+            st.error("Failed to fetch meetings or no meetings found.")
+            return []
+
+        # Filter meetings where user_id is in the 'people' list
+        user_meetings = [meeting for meeting in response if user_id in meeting.get("people", [])]
+        return user_meetings
+    except Exception as e:
+        st.error(f"An error occurred while fetching meetings: {e}")
+        return []
+
+
