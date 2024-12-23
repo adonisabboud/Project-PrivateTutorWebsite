@@ -18,6 +18,7 @@ def student_view():
             teachers = fetch_data("/teachers/")
             if teachers:
                 for teacher in teachers:
+                    # if teacher.name == my name then skip
                     st.write(f"**Name:** {teacher.get('name', 'N/A')}")
                     st.write(f"**Subjects:** {', '.join(teacher.get('subjects', []))}")
                     if st.button(f"Request Meeting with {teacher.get('name')}", key=teacher.get("id")):

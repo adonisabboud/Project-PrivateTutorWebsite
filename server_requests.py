@@ -178,7 +178,7 @@ def send_data(endpoint, data=None, method="POST"):
         return None
 
 
-def get_my_meetings(user_id):
+def get_my_meetings(user_id): #
     try:
         logger.info(f"Fetching meetings for user ID: {user_id}")
         if not user_id:
@@ -186,7 +186,7 @@ def get_my_meetings(user_id):
             st.error("Please log in to view your meetings.")
             return []
 
-        endpoint = f"/meetings/user/{user_id}"
+        endpoint = f"/meetings/user/{user_id}" # we dont have the endpoint we want to get all meeting and go over them and append the relevant meetings.
         meetings = fetch_data(endpoint)
         if meetings:
             logger.info(f"Retrieved {len(meetings)} meetings for user {user_id}")

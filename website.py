@@ -159,6 +159,9 @@ def handle_auth(auth_action, email, password, full_name=None, username=None):
 def update_session(user_profile):
     """Update session state with user information."""
     st.session_state.user_id = user_profile.get("user_id")
+    # get user by id by calling the endpoint Request URL
+    # https://project-privatetutor.onrender.com/users/id/676823f1e3603040e08723a3
+    # now we update the fields
     st.session_state.user_authenticated = True
     st.session_state.profile_type = None  # Reset profile type
     # Store additional information
@@ -166,7 +169,7 @@ def update_session(user_profile):
     st.session_state.user_email = user_profile.get("email", "")
 
 
-def render_profile_creation():
+def render_profile_creation(): # here we can check if the profile exits if yes skip the function
     """Render profile creation for the logged-in user."""
     st.title("Create Your Profile")
     profile_type = st.radio("Select Your Role", ["Student", "Teacher"], key="profile_type_selection")
