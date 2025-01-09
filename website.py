@@ -60,11 +60,7 @@ def toggle_profile():
     st.success(f"Switched to {new_profile_type} profile!")
 
 
-def check_existing_profile(profile_type):
-    """Check if a profile already exists for the user."""
-    endpoint = f"/{'students' if profile_type == 'Student' else 'teachers'}/{st.session_state.user_id}"
-    response = fetch_data(endpoint)
-    return response is not None
+
 
 
 def create_profile(profile_type):
@@ -165,14 +161,67 @@ def update_session(user_profile):
     st.session_state.user_authenticated = True
     st.session_state.profile_type = None  # Reset profile type
     # Store additional information
-    st.session_state.user_name = user_profile.get("name", "Unknown User")
-    st.session_state.user_email = user_profile.get("email", "")
+    user_data = get_user_data(st.session_state.user_id)
+    #print(user_data)
+    st.session_state.user_name = user_data.get("name", "Unknown User")
+    st.session_state.user_email = user_data.get("email", "")
 
+###################################################
 
-def render_profile_creation(): # here we can check if the profile exits if yes skip the function
-    """Render profile creation for the logged-in user."""
+def display_profile(profile):
+    """Display user profile details in a readable format."""
+    st.subheader("Profile Details")
+    st.write(f"**Name:** {profile['name']}")
+    st.write(f"**Email:** {profile['email']}")
+    if profile.get('phone'):
+        st.write(f"**Phone:** {profile['phone']}")
+    if profile.get('about_section'):
+        st.write(f"**About:** {profile['about_section']}")
+    if profile.get('available_intervals'):
+        st.write("**Available Intervals:**")
+        for interval in profile['available_intervals']:
+            st.write(f"From {interval['start']} to {interval['end']}")
+
+def manage_time_intervals(available_intervals):
+    """Manage adding and deleting available time intervals."""
+    st.write("**Available Time Intervals**")
+    start_date = st.date_input("Select Start Date")
+    start_time = st.time_input("Select Start Time")
+    end_date = st.date_input("Select End Date")
+    end_time = st.time_input("Select End Time")
+
+    if st.button("Add Time Interval"):
+        start_iso = datetime.combine(start_date, start_time).isoformat()
+        end_iso = datetime.combine(end_date, end_time).isoformat()
+
+        if datetime.fromisoformat(end_iso) <= datetime.fromisoformat(start_iso):
+            st.error("End time must be after start time!")
+        else:
+            available_intervals.append({"start": start_iso, "end": end_iso})
+            st.session_state["available_intervals"] = available_intervals
+            st.success(f"Time interval added: {start_iso} to {end_iso}")
+
+    if available_intervals:
+        st.write("**Current Available Time Intervals:**")
+        for interval in available_intervals:
+            st.write(f"{interval['start']} to {interval['end']}")
+            if st.button(f"Delete {interval}", key=f"delete_{interval}"):
+                available_intervals.remove(interval)
+                st.session_state["available_intervals"] = available_intervals
+
+def render_profile_creation():
+    """Render profile creation for the logged-in user, with checks for existing profiles and management of time intervals."""
     st.title("Create Your Profile")
     profile_type = st.radio("Select Your Role", ["Student", "Teacher"], key="profile_type_selection")
+
+    # Check if the profile already exists
+    existing_profile = check_existing_profile(profile_type)
+    if existing_profile:
+        display_profile(existing_profile)
+        if st.button("Continue"):
+            st.success("Proceeding to the next step...")
+        st.json(existing_profile)  # Display existing profile data
+        return  # Skip the rest of the function to prevent new profile creation
 
     phone = st.text_input("Phone", placeholder="Enter your phone number")
     about_section = st.text_area("About You", placeholder="Write something about yourself")
@@ -198,10 +247,21 @@ def render_profile_creation(): # here we can check if the profile exits if yes s
             st.session_state["available_intervals"] = available_intervals
             st.success(f"Time interval added: {start_iso} to {end_iso}")
 
+    # Display and manage existing time intervals
     if available_intervals:
         st.write("**Current Available Time Intervals:**")
-        for interval in available_intervals:
+        delete_indices = []
+        for i, interval in enumerate(available_intervals):
             st.write(f"{interval['start']} to {interval['end']}")
+            if st.button(f"Delete {i}", key=f"delete_{i}"):
+                # Mark the interval for deletion
+                delete_indices.append(i)
+
+        # Remove marked intervals from the list
+        if delete_indices:
+            for index in sorted(delete_indices, reverse=True):
+                available_intervals.pop(index)
+            st.session_state["available_intervals"] = available_intervals
 
     # Role-specific fields
     if profile_type == "Student":

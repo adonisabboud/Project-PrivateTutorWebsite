@@ -236,3 +236,69 @@ def fetch_user_meetings(user_id):
         return []
 
 
+def get_user_data(user_id):
+    """
+    Fetches user data from the API using the user's ID.
+
+    Args:
+        user_id (str): The ID of the user to fetch.
+
+    Returns:
+        dict: User data on successful fetch, or None on failure.
+    """
+    if not user_id:
+        logger.error("User ID is None. Cannot fetch user data.")
+        st.error("User ID is required to fetch user data.")
+        return None
+
+    try:
+        # Construct the endpoint to fetch user data
+        endpoint = f"/users/id/{user_id}"
+        logger.info(f"Fetching data for user ID: {user_id}")
+
+        # Make the API call
+        user_data = fetch_data(endpoint)
+
+        # Optionally, process or log the user data if needed
+        if user_data:
+            logger.info(f"Retrieved data for user {user_id}: {user_data}")
+        else:
+            logger.info(f"No data found for user {user_id}")
+
+        return user_data
+    except Exception as e:
+        logger.exception(f"Error fetching data for user {user_id}: {e}")
+        st.error("Failed to fetch user data. Please try again later.")
+        return None
+
+
+def check_existing_profile(profile_type):
+    """Check if a profile already exists for the user by fetching all profiles of the given type and checking for user ID."""
+    if profile_type == "Student":
+        endpoint = "/students/"
+    elif profile_type == "Teacher":
+        endpoint = "/teachers/"
+    else:
+        raise ValueError("Invalid profile type specified")
+
+    all_profiles = fetch_data(endpoint)
+    print("Fetched profiles:", all_profiles)  # Debug output to see what is fetched
+
+    if not all_profiles:  # Checks if list is empty or None
+        st.error("No profiles found or failed to fetch profiles.")
+        return None
+
+    user_id = st.session_state.get('user_id')  # Safely get the user_id with a fallback
+    if user_id is None:
+        st.error("User ID not set in session state.")
+        return None
+
+    for profile in all_profiles:
+        if profile.get("id") == user_id:
+            return profile    # Profile exists
+
+    return None  # No profile found
+
+
+
+
