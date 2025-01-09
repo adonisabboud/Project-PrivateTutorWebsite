@@ -93,50 +93,53 @@ def get_my_meetings(user_id):
         return []
 
 # Meeting Management
-def request_meeting_with_teacher(teacher_id):
+def request_meeting_with_teacher(teacher):
     """
-    Allows a student to request a meeting with a teacher.
+    Allows a student to request a meeting with a teacher using teacher information already loaded into the session.
 
     Args:
-        teacher_id (str): The ID of the teacher to meet with.
+        teacher (dict): The dictionary containing the teacher's data.
     """
     try:
-        logger.info(f"Requesting a meeting with teacher {teacher_id}")
-        teacher = fetch_data(f"/teachers/{teacher_id}")
-        if not teacher:
-            st.error("Teacher not found.")
-            logger.error(f"Teacher not found: {teacher_id}")
-            return
-
+        logger.info(f"Requesting a meeting with teacher {teacher.get('name', 'N/A')} (ID: {teacher.get('id')})")
         st.write(f"Requesting a meeting with {teacher.get('name', 'N/A')}")
-        available_times = teacher.get('available_times', [])
-        if not available_times:
-            st.info(f"No available times for {teacher.get('name', 'N/A')}")
-            return
 
-        selected_time = st.selectbox("Select an available time", available_times)
+        # Allow user to input meeting details
         meeting_subject = st.text_input("Meeting Subject", help="Enter the subject of the meeting.")
         meeting_location = st.text_input("Meeting Location", help="Enter the meeting location.")
 
+        # Time selection
+        start_time = st.time_input("Start Time", help="Set the meeting's start time.")
+        finish_time = st.time_input("Finish Time", help="Set the meeting's end time.")
+
         if st.button("Request Meeting"):
+            # Validate input
             if not meeting_subject or not meeting_location:
                 st.warning("Please provide both subject and location for the meeting.")
                 return
 
+            # Create meeting data in specified format
             meeting_data = {
-                "teacher_id": teacher_id,
-                "student_id": st.session_state.get("user_id"),
-                "start_time": selected_time,
-                "subject": meeting_subject,
                 "location": meeting_location,
+                "start_time": start_time.isoformat(),  # Convert to ISO format
+                "finish_time": finish_time.isoformat(),  # Convert to ISO format
+                "subject": meeting_subject,
+                "people": [
+                    {"id": teacher['id'], "role": "Teacher", "name": teacher['name']},
+                    {"id": st.session_state.get("user_id"), "role": "Student", "name": st.session_state.get("user_name")}
+                ],
+                "attached_files": []  # No attached files by default
             }
+
+            # Send the meeting request to the `/meetings` endpoint
             if send_data("/meetings", meeting_data):
-                logger.info(f"Meeting request sent: {meeting_data}")
-                st.success("Meeting successfully requested!")
+                logger.info(f"Meeting created successfully: {meeting_data}")
+                st.success("Meeting successfully created!")
             else:
-                st.error("Failed to request the meeting. Please try again.")
+                logger.error(f"Failed to create meeting: {meeting_data}")
+                st.error("Failed to create the meeting. Please try again.")
     except Exception as e:
-        logger.exception(f"Error requesting meeting with teacher {teacher_id}: {e}")
+        logger.exception(f"Error creating meeting with teacher {teacher.get('id')}: {e}")
         st.error("An unexpected error occurred. Please try again.")
 
 def send_data(endpoint, data=None, method="POST"):

@@ -15,15 +15,18 @@ def student_view():
     if choice == "Available Teachers":
         st.subheader("Available Teachers")
         try:
-            teachers = fetch_data("/teachers/")
+            teachers = fetch_data("/teachers/")  # Fetch all teachers once
             if teachers:
                 for teacher in teachers:
-                    # if teacher.name == my name then skip
+                    # Skip self (if a teacher views their own data)
+                    if teacher.get("id") == st.session_state.get("user_id"):
+                        continue
+
                     st.write(f"**Name:** {teacher.get('name', 'N/A')}")
-                    st.write(f"**Subjects:** {', '.join(teacher.get('subjects', []))}")
+                    st.write(f"**Subjects:** {', '.join(teacher.get('subjects_to_teach', []))}")
                     if st.button(f"Request Meeting with {teacher.get('name')}", key=teacher.get("id")):
                         logger.info(f"Requesting meeting with teacher {teacher.get('id')}")
-                        request_meeting_with_teacher(teacher.get("id"))
+                        request_meeting_with_teacher(teacher)  # Pass the teacher JSON directly
                     st.write("---")
             else:
                 logger.info("No teachers found.")

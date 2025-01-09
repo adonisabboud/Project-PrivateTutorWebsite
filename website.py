@@ -219,6 +219,8 @@ def render_profile_creation():
     if existing_profile:
         display_profile(existing_profile)
         if st.button("Continue"):
+            st.session_state.profile_type = profile_type
+            st.session_state.navigation = "main_app"
             st.success("Proceeding to the next step...")
         st.json(existing_profile)  # Display existing profile data
         return  # Skip the rest of the function to prevent new profile creation
