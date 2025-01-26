@@ -37,7 +37,16 @@ def teacher_view():
         availability = st.text_area("Enter your availability (e.g., Monday 9-12 AM)")
         if st.button("Save Availability"):
             try:
-                if send_data(f"/users/{st.session_state.user_id}/availability", {"availability": availability}, method="PUT"):
+                user_data = get_user_data(st.session_state.user_id)
+                if not user_data:
+                    st.error("Failed to fetch user data. Cannot update availability.")
+                    return
+                payload = {
+                    "name": user_data.get("name"),
+                    "about_section": user_data.get("about_section", ""),
+                    "availability": availability
+                }
+                if send_data(f"/teachers/{st.session_state.user_id}", payload, method="PUT"):
                     logger.info(f"Availability updated for user {st.session_state.user_id}")
                     st.success("Availability updated successfully!")
                 else:

@@ -6,7 +6,7 @@ from student_view import student_view
 from teacher_view import teacher_view
 import streamlit as st
 from datetime import datetime
-
+from bson.objectid import ObjectId
 
 def main():
     # Initialize session state variables
@@ -60,9 +60,6 @@ def toggle_profile():
     st.success(f"Switched to {new_profile_type} profile!")
 
 
-
-
-
 def create_profile(profile_type):
     """Automatically create a profile if it doesn't exist."""
     user_id = st.session_state.user_id
@@ -108,7 +105,7 @@ def create_profile(profile_type):
 
 def render_authentication_page():
     """Render the login and registration interface."""
-    st.title("Welcome to the Scheduler")
+
     auth_action = st.radio("Login or Register", ["Login", "Register"], key="auth_action")
 
     email = st.text_input("Email", placeholder="Enter your email")
@@ -154,7 +151,10 @@ def handle_auth(auth_action, email, password, full_name=None, username=None):
 
 def update_session(user_profile):
     """Update session state with user information."""
-    st.session_state.user_id = user_profile.get("user_id")
+    str_id = user_profile.get("user_id")
+    st.session_state.user_id = str(str_id)
+    print(f"printing str_id :-> {str_id}")  # Outputs the string ID
+
     # get user by id by calling the endpoint Request URL
     # https://project-privatetutor.onrender.com/users/id/676823f1e3603040e08723a3
     # now we update the fields
@@ -162,9 +162,9 @@ def update_session(user_profile):
     st.session_state.profile_type = None  # Reset profile type
     # Store additional information
     user_data = get_user_data(st.session_state.user_id)
-    #print(user_data)
     st.session_state.user_name = user_data.get("name", "Unknown User")
     st.session_state.user_email = user_data.get("email", "")
+
 
 ###################################################
 
@@ -181,6 +181,7 @@ def display_profile(profile):
         st.write("**Available Intervals:**")
         for interval in profile['available_intervals']:
             st.write(f"From {interval['start']} to {interval['end']}")
+
 
 def manage_time_intervals(available_intervals):
     """Manage adding and deleting available time intervals."""
@@ -208,6 +209,7 @@ def manage_time_intervals(available_intervals):
             if st.button(f"Delete {interval}", key=f"delete_{interval}"):
                 available_intervals.remove(interval)
                 st.session_state["available_intervals"] = available_intervals
+
 
 def render_profile_creation():
     """Render profile creation for the logged-in user, with checks for existing profiles and management of time intervals."""
@@ -293,6 +295,7 @@ def render_profile_creation():
                 available_intervals=available_intervals
             )
 
+
 def create_student_profile(id, name, phone, email, about_section, subjects_interested_in_learning, available_intervals):
     """Send a request to create a student profile."""
     payload = {
@@ -365,7 +368,6 @@ def render_main_app():
             st.markdown("---")
     else:
         st.info("You have no scheduled meetings.")
-
 
 
 if __name__ == "__main__":

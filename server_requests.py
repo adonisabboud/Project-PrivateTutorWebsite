@@ -71,6 +71,44 @@ def send_data(endpoint, data=None, method="POST"):
         st.error("A network error occurred. Please check your connection and try again.")
         return None
 
+# def send_data(endpoint, data=None, method="POST"):
+#     """
+#     Send data to a specified API endpoint using the desired HTTP method.
+#
+#     Args:
+#         endpoint (str): The API endpoint to send the data to.
+#         data (dict, optional): The payload to send to the server.
+#         method (str): The HTTP method to use (e.g., "POST", "PUT", "DELETE").
+#
+#     Returns:
+#         dict or None: The server's response (parsed JSON) on success; None on failure.
+#     """
+#     try:
+#         headers = {
+#             "Authorization": f"Bearer {st.session_state.get('token', '')}",
+#             "Content-Type": "application/json"
+#         }
+#         url = f"{BASE_URL}{endpoint}"
+#         logger.info(f"Sending {method} request to {url} with data: {data}")
+#
+#         if method == "POST":
+#             response = requests.post(url, headers=headers, json=data)
+#         elif method == "PUT":
+#             response = requests.put(url, headers=headers, json=data)
+#         elif method == "DELETE":
+#             response = requests.delete(url, headers=headers, json=data)
+#         else:
+#             logger.error(f"Unsupported HTTP method: {method}")
+#             st.error(f"Unsupported HTTP method: {method}")
+#             return None
+#
+#         # Handle response
+#         return handle_response(response)
+#     except requests.exceptions.RequestException as e:
+#         logger.exception(f"Request to {endpoint} failed: {e}")
+#         st.error("A network error occurred. Please check your connection and try again.")
+#         return None
+
 
 def get_my_meetings(user_id):
     """
@@ -95,90 +133,56 @@ def get_my_meetings(user_id):
 # Meeting Management
 def request_meeting_with_teacher(teacher):
     """
-    Allows a student to request a meeting with a teacher using teacher information already loaded into the session.
+    Create a meeting instance using the selected teacher's data and provided meeting details.
 
     Args:
-        teacher (dict): The dictionary containing the teacher's data.
+        teacher (dict): The teacher's JSON data.
     """
     try:
-        logger.info(f"Requesting a meeting with teacher {teacher.get('name', 'N/A')} (ID: {teacher.get('id')})")
-        st.write(f"Requesting a meeting with {teacher.get('name', 'N/A')}")
+        st.subheader(f"Request Meeting with {teacher.get('name', 'N/A')}")
 
-        # Allow user to input meeting details
+        # Allow the student to input meeting details
         meeting_subject = st.text_input("Meeting Subject", help="Enter the subject of the meeting.")
         meeting_location = st.text_input("Meeting Location", help="Enter the meeting location.")
-
-        # Time selection
         start_time = st.time_input("Start Time", help="Set the meeting's start time.")
         finish_time = st.time_input("Finish Time", help="Set the meeting's end time.")
 
         if st.button("Request Meeting"):
-            # Validate input
             if not meeting_subject or not meeting_location:
                 st.warning("Please provide both subject and location for the meeting.")
                 return
 
-            # Create meeting data in specified format
+            if finish_time <= start_time:
+                st.warning("Finish time must be after start time.")
+                return
+
+            # Build the meeting payload
             meeting_data = {
                 "location": meeting_location,
-                "start_time": start_time.isoformat(),  # Convert to ISO format
-                "finish_time": finish_time.isoformat(),  # Convert to ISO format
+                "start_time": start_time.isoformat(),
+                "finish_time": finish_time.isoformat(),
                 "subject": meeting_subject,
                 "people": [
-                    {"id": teacher['id'], "role": "Teacher", "name": teacher['name']},
+                    {"id": teacher['id'], "role": "Teacher", "name": teacher.get('name', 'N/A')},
                     {"id": st.session_state.get("user_id"), "role": "Student", "name": st.session_state.get("user_name")}
                 ],
-                "attached_files": []  # No attached files by default
+                "attached_files": []  # Optional, leave empty for now
             }
 
-            # Send the meeting request to the `/meetings` endpoint
-            if send_data("/meetings", meeting_data):
-                logger.info(f"Meeting created successfully: {meeting_data}")
+            # Send the meeting request to the `/meetings/` endpoint
+            response = send_data("/meetings/", meeting_data)
+            if response:
+                logger.info(f"Meeting created successfully: {response}")
                 st.success("Meeting successfully created!")
             else:
                 logger.error(f"Failed to create meeting: {meeting_data}")
                 st.error("Failed to create the meeting. Please try again.")
     except Exception as e:
-        logger.exception(f"Error creating meeting with teacher {teacher.get('id')}: {e}")
+        logger.exception(f"Error requesting meeting with teacher {teacher.get('id')}: {e}")
         st.error("An unexpected error occurred. Please try again.")
 
-def send_data(endpoint, data=None, method="POST"):
-    """
-    Send data to a specified API endpoint using the desired HTTP method.
 
-    Args:
-        endpoint (str): The API endpoint to send the data to.
-        data (dict, optional): The payload to send to the server.
-        method (str): The HTTP method to use (e.g., "POST", "PUT", "DELETE").
 
-    Returns:
-        dict or None: The server's response (parsed JSON) on success; None on failure.
-    """
-    try:
-        headers = {
-            "Authorization": f"Bearer {st.session_state.get('token', '')}",
-            "Content-Type": "application/json"
-        }
-        url = f"{BASE_URL}{endpoint}"
-        logger.info(f"Sending {method} request to {url} with data: {data}")
-
-        if method == "POST":
-            response = requests.post(url, headers=headers, json=data)
-        elif method == "PUT":
-            response = requests.put(url, headers=headers, json=data)
-        elif method == "DELETE":
-            response = requests.delete(url, headers=headers, json=data)
-        else:
-            logger.error(f"Unsupported HTTP method: {method}")
-            st.error(f"Unsupported HTTP method: {method}")
-            return None
-
-        # Handle response
-        return handle_response(response)
-    except requests.exceptions.RequestException as e:
-        logger.exception(f"Request to {endpoint} failed: {e}")
-        st.error("A network error occurred. Please check your connection and try again.")
-        return None
 
 
 def get_my_meetings(user_id): #
