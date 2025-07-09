@@ -8,6 +8,7 @@ import streamlit as st
 from datetime import datetime
 from bson.objectid import ObjectId
 
+
 def main():
     # Initialize session state variables
     if "user_id" not in st.session_state:

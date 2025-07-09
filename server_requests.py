@@ -4,7 +4,6 @@ import logging
 from dotenv import load_dotenv
 import os
 
-
 # Load environment variables
 load_dotenv()
 
@@ -19,6 +18,7 @@ if not BASE_URL:
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
+
 
 def handle_response(response, success_message=None):
     try:
@@ -36,7 +36,6 @@ def handle_response(response, success_message=None):
         logger.exception(f"Failed to handle API response: {e}")
         st.error("An unexpected error occurred while processing the server response.")
         return None
-
 
 
 # API Interactions
@@ -70,6 +69,7 @@ def send_data(endpoint, data=None, method="POST"):
         logger.exception(f"Request to {endpoint} failed: {e}")
         st.error("A network error occurred. Please check your connection and try again.")
         return None
+
 
 # def send_data(endpoint, data=None, method="POST"):
 #     """
@@ -130,6 +130,7 @@ def get_my_meetings(user_id):
         logger.exception(f"Error fetching meetings for user {user_id}: {e}")
         return []
 
+
 # Meeting Management
 def request_meeting_with_teacher(teacher):
     """
@@ -164,7 +165,8 @@ def request_meeting_with_teacher(teacher):
                 "subject": meeting_subject,
                 "people": [
                     {"id": teacher['id'], "role": "Teacher", "name": teacher.get('name', 'N/A')},
-                    {"id": st.session_state.get("user_id"), "role": "Student", "name": st.session_state.get("user_name")}
+                    {"id": st.session_state.get("user_id"), "role": "Student",
+                     "name": st.session_state.get("user_name")}
                 ],
                 "attached_files": []  # Optional, leave empty for now
             }
@@ -182,10 +184,7 @@ def request_meeting_with_teacher(teacher):
         st.error("An unexpected error occurred. Please try again.")
 
 
-
-
-
-def get_my_meetings(user_id): #
+def get_my_meetings(user_id):  #
     try:
         logger.info(f"Fetching meetings for user ID: {user_id}")
         if not user_id:
@@ -193,7 +192,8 @@ def get_my_meetings(user_id): #
             st.error("Please log in to view your meetings.")
             return []
 
-        endpoint = f"/meetings/user/{user_id}" # we dont have the endpoint we want to get all meeting and go over them and append the relevant meetings.
+        endpoint = f"/meetings/user/{user_id}"  # we dont have the endpoint we want to get all meeting and go over
+        # them and append the relevant meetings.
         meetings = fetch_data(endpoint)
         if meetings:
             logger.info(f"Retrieved {len(meetings)} meetings for user {user_id}")
@@ -224,7 +224,6 @@ def update_profile(about_section):
     else:
         logger.error(f"Failed to update profile for user {user_id}")
         st.error("Failed to update profilee. Please try again.")
-
 
 
 def fetch_user_meetings(user_id):
@@ -302,10 +301,6 @@ def check_existing_profile(profile_type):
 
     for profile in all_profiles:
         if profile.get("id") == user_id:
-            return profile    # Profile exists
+            return profile  # Profile exists
 
     return None  # No profile found
-
-
-
-

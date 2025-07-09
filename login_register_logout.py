@@ -16,9 +16,11 @@ def login(email, password):
     try:
         payload = {"email": email, "password": password}
         result = send_data("/users/login", data=payload, method="POST")
+        st.write("Login response:", result)  # 🔍 Debug output
 
         if result and "user_id" in result:
             logger.info(f"Login successful for user {email}")
+            st.session_state.user_id = result["user_id"]
             return result
         elif result and "detail" in result:
             logger.error(f"Login failed: {result['detail']}")
@@ -40,6 +42,8 @@ def register(name, username, email, password):
         logger.info("Registering new user.")
         payload = {"name": name, "username": username, "email": email, "password": password, "roles": []}
         result = send_data("/users", payload)
+        st.write("Registration response:", result)  # 🔍 Debug output
+
         if result and "user_id" in result:
             logger.info("Registration successful.")
             return result

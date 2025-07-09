@@ -57,14 +57,22 @@ def student_view():
     elif choice == "Edit Profile":
         st.subheader("Edit Your Profile")
         about_section = st.text_area("About Me", placeholder="Write about yourself...")
+        st.write("DEBUG user_id in session:", st.session_state.get("user_id"))
         if st.button("Update Profile"):
             try:
-                if send_data(f"/users/{st.session_state.user_id}", {"about_section": about_section}, method="PUT"):
-                    logger.info(f"Profile updated for user {st.session_state.user_id}")
-                    st.success("Profile updated successfully!")
+                user_id = st.session_state.user_id
+                existing_data = fetch_data(f"/students/{user_id}")
+
+                if not existing_data:
+                    st.error("Failed to load your profile.")
                 else:
-                    logger.error(f"Failed to update profile for user {st.session_state.user_id}")
-                    st.error("Failed to update profile. Please try again.")
+                    existing_data["about_section"] = about_section.strip()
+                    response = send_data(f"/students/{user_id}", existing_data, method="PUT")
+
+                    if response:
+                        st.success("Profile updated successfully!")
+                    else:
+                        st.error("Update failed. Try again.")
             except Exception as e:
-                logger.exception("Error updating profile.")
-                st.error("An error occurred while updating your profile. Please try again later.")
+                st.error("An unexpected error occurred.")
+                logger.exception("Profile update failed.")
