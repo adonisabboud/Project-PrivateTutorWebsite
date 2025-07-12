@@ -9,7 +9,8 @@ def student_view():
     """Student Dashboard."""
     logger.info("Loading Student Dashboard.")
     st.subheader("Student Dashboard")
-    options = ["Available Teachers", "My Meetings", "Edit Profile"]
+    options = ["Available Teachers", "My Meetings", "Edit Profile", "My Profile"]
+
     choice = st.sidebar.radio("Menu", options)
 
     if choice == "Available Teachers":
@@ -76,3 +77,39 @@ def student_view():
             except Exception as e:
                 st.error("An unexpected error occurred.")
                 logger.exception("Profile update failed.")
+
+    elif choice == "My Profile":
+        st.subheader("📋 My Profile")
+
+        try:
+            user_id = st.session_state.get("user_id")
+            student_data = fetch_data(f"/students/{user_id}")
+
+            if student_data:
+                st.markdown("### 👤 Personal Information")
+                st.write(f"**Name:** {student_data.get('name', 'N/A')}")
+                st.write(f"**Email:** {student_data.get('email', 'N/A')}")
+                st.write(f"**Phone:** {student_data.get('phone', 'N/A')}")
+
+                st.markdown("### 🧾 About Me")
+                st.write(student_data.get("about_section", "_No info provided._"))
+
+                st.markdown("### 📚 Subjects Interested In")
+                subjects = student_data.get("subjects_interested_in_learning", [])
+                st.write(", ".join(subjects) if subjects else "_None listed._")
+
+                st.markdown("### 🕒 Availability")
+                availability = student_data.get("available", [])
+                if availability:
+                    for i, interval in enumerate(availability):
+                        start = interval.get("start", "N/A")
+                        end = interval.get("end", "N/A")
+                        st.write(f"{i + 1}. **From:** {start} → **To:** {end}")
+                else:
+                    st.write("_No availability set._")
+
+            else:
+                st.warning("Unable to fetch profile data. Please try again later.")
+        except Exception as e:
+            logger.exception("Failed to load student profile.")
+            st.error("An unexpected error occurred while loading your profile.")

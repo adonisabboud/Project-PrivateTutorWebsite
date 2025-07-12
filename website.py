@@ -1,12 +1,10 @@
 from header import render_authentication_page, render_header
 from login_register_logout import *
-from select_profile import render_profile_selection
 from server_requests import *
 from student_view import student_view
 from teacher_view import teacher_view
 import streamlit as st
 from datetime import datetime
-from bson.objectid import ObjectId
 
 
 def main():
@@ -61,42 +59,87 @@ def toggle_profile():
     st.success(f"Switched to {new_profile_type} profile!")
 
 
+def validate_and_convert_intervals(intervals):
+    """Ensure all time intervals are dictionaries with ISO 8601 'start' and 'end' strings."""
+    validated = []
+
+    for item in intervals:
+        if not isinstance(item, dict):
+            continue  # skip if not a dictionary
+
+        start = item.get("start")
+        end = item.get("end")
+
+        if isinstance(start, datetime) and isinstance(end, datetime):
+            validated.append({
+                "start": start.isoformat(),
+                "end": end.isoformat()
+            })
+        elif isinstance(start, str) and isinstance(end, str):
+            try:
+                # Make sure the strings are valid ISO datetime strings
+                datetime.fromisoformat(start)
+                datetime.fromisoformat(end)
+                validated.append({
+                    "start": start,
+                    "end": end
+                })
+            except ValueError:
+                continue  # skip invalid string formats
+        # else: skip silently if data is malformed
+    return validated
+
+
 def create_profile(profile_type):
     """Automatically create a profile if it doesn't exist."""
     user_id = st.session_state.user_id
     user_name = st.session_state.get("user_name", "Unknown User")
     user_email = st.session_state.get("user_email", "")
+    phone = st.session_state.get("phone", "Unknown")
+    about = st.session_state.get("about_section", "Default profile")
+
+    raw_intervals = st.session_state.get("available_intervals", [])
+    available_intervals = validate_and_convert_intervals(raw_intervals)
 
     if profile_type == "Student":
         payload = {
             "id": user_id,
             "name": user_name,
-            "phone": "Unknown",
+            "phone": phone,
             "email": user_email,
-            "about_section": "Default student profile",
-            "available": [],
+            "about_section": about,
+            "available": available_intervals,
             "rating": 0,
-            "subjects_interested_in_learning": ["General"],
+            "subjects_interested_in_learning": st.session_state.get("subjects", ["General"]),
             "meetings": [],
         }
+
+        st.subheader("📦 Student Payload Debug")
+        st.json(payload)
+
         response = send_data("/students", data=payload)
         if response:
             st.success("Student profile created!")
         else:
             st.error("Failed to create student profile.")
+
     elif profile_type == "Teacher":
         payload = {
             "id": user_id,
             "name": user_name,
-            "phone": "Unknown",
+            "phone": phone,
             "email": user_email,
-            "about_section": "Default teacher profile",
-            "available": [],
+            "about_section": about,
+            "available": available_intervals,
             "rating": 0,
-            "subjects_to_teach": ["General"],
-            "hourly_rate": 10,
+            "subjects_to_teach": st.session_state.get("subjects", ["General"]),
+            "hourly_rate": st.session_state.get("rate", 10),
             "meetings": [],
         }
+
+        st.subheader("📦 Teacher Payload Debug")
+        st.json(payload)
+
         response = send_data("/teachers", data=payload)
         if response:
             st.success("Teacher profile created!")
@@ -184,34 +227,6 @@ def display_profile(profile):
             st.write(f"From {interval['start']} to {interval['end']}")
 
 
-def manage_time_intervals(available_intervals):
-    """Manage adding and deleting available time intervals."""
-    st.write("**Available Time Intervals**")
-    start_date = st.date_input("Select Start Date")
-    start_time = st.time_input("Select Start Time")
-    end_date = st.date_input("Select End Date")
-    end_time = st.time_input("Select End Time")
-
-    if st.button("Add Time Interval"):
-        start_iso = datetime.combine(start_date, start_time).isoformat()
-        end_iso = datetime.combine(end_date, end_time).isoformat()
-
-        if datetime.fromisoformat(end_iso) <= datetime.fromisoformat(start_iso):
-            st.error("End time must be after start time!")
-        else:
-            available_intervals.append({"start": start_iso, "end": end_iso})
-            st.session_state["available_intervals"] = available_intervals
-            st.success(f"Time interval added: {start_iso} to {end_iso}")
-
-    if available_intervals:
-        st.write("**Current Available Time Intervals:**")
-        for interval in available_intervals:
-            st.write(f"{interval['start']} to {interval['end']}")
-            if st.button(f"Delete {interval}", key=f"delete_{interval}"):
-                available_intervals.remove(interval)
-                st.session_state["available_intervals"] = available_intervals
-
-
 def render_profile_creation():
     """Render profile creation for the logged-in user, with checks for existing profiles and management of time intervals."""
     st.title("Create Your Profile")
@@ -228,88 +243,88 @@ def render_profile_creation():
         st.json(existing_profile)  # Display existing profile data
         return  # Skip the rest of the function to prevent new profile creation
 
+    # Basic info inputs
     phone = st.text_input("Phone", placeholder="Enter your phone number")
     about_section = st.text_area("About You", placeholder="Write something about yourself")
 
-    # Allow user-friendly input of available time intervals
-    st.write("**Available Time Intervals**")
-    available_intervals = st.session_state.get("available_intervals", [])
-    start_date = st.date_input("Select Start Date")
-    start_time = st.time_input("Select Start Time")
-    end_date = st.date_input("Select End Date")
-    end_time = st.time_input("Select End Time")
+    # Section: Available Time Intervals
+    st.markdown("### 📅 Available Time Intervals")
 
-    if st.button("Add Time Interval"):
-        # Combine date and time into ISO format
-        start_iso = datetime.combine(start_date, start_time).isoformat()
-        end_iso = datetime.combine(end_date, end_time).isoformat()
+    # Select start datetime
+    start_date = st.date_input("Select Start Date", key="start_date")
+    start_time = st.time_input("Select Start Time", key="start_time")
 
-        # Validate that end time is after start time
-        if datetime.fromisoformat(end_iso) <= datetime.fromisoformat(start_iso):
-            st.error("End time must be after start time!")
+    # Select end datetime
+    end_date = st.date_input("Select End Date", key="end_date")
+    end_time = st.time_input("Select End Time", key="end_time")
+
+    # Combine into datetime objects
+    start_dt = datetime.combine(start_date, start_time)
+    end_dt = datetime.combine(end_date, end_time)
+
+    # Initialize session state
+    if "available_intervals" not in st.session_state:
+        st.session_state.available_intervals = []
+
+    # Add interval if valid
+    if st.button("➕ Add Time Interval"):
+        if end_dt <= start_dt:
+            st.error("End time must be after start time.")
         else:
-            available_intervals.append({"start": start_iso, "end": end_iso})
-            st.session_state["available_intervals"] = available_intervals
-            st.success(f"Time interval added: {start_iso} to {end_iso}")
+            st.session_state.available_intervals.append({
+                "start": start_dt,
+                "end": end_dt
+            })
+            st.success("Time interval added!")
 
-    # Display and manage existing time intervals
-    if available_intervals:
-        st.write("**Current Available Time Intervals:**")
-        delete_indices = []
-        for i, interval in enumerate(available_intervals):
-            st.write(f"{interval['start']} to {interval['end']}")
-            if st.button(f"Delete {i}", key=f"delete_{i}"):
-                # Mark the interval for deletion
-                delete_indices.append(i)
+    # Display current intervals
+    st.markdown("#### 🕒 Current Available Time Intervals:")
+    for i, interval in enumerate(st.session_state.available_intervals):
+        st.write(f"{i + 1}. {interval['start']} to {interval['end']}")
+        if st.button(f"Delete {i}", key=f"delete_{i}"):
+            st.session_state.available_intervals.pop(i)
+            st.rerun()
 
-        # Remove marked intervals from the list
-        if delete_indices:
-            for index in sorted(delete_indices, reverse=True):
-                available_intervals.pop(index)
-            st.session_state["available_intervals"] = available_intervals
-
-    # Role-specific fields
+    # Role-specific input and create button
     if profile_type == "Student":
         subjects = st.text_area("Subjects You Want to Learn", placeholder="E.g., Math, Physics")
         if st.button("Create Student Profile"):
-            create_student_profile(
-                id=st.session_state.user_id,
-                name=st.session_state.get("user_name"),
-                phone=phone,
-                email=st.session_state.get("user_email"),
-                about_section=about_section,
-                subjects_interested_in_learning=subjects.split(","),
-                available_intervals=available_intervals
-            )
+            # Store in session state for backend use
+            st.session_state.phone = phone
+            st.session_state.about_section = about_section
+            st.session_state.subjects = subjects.split(",")
+            create_profile("Student")
+
     elif profile_type == "Teacher":
         subjects = st.text_area("Subjects You Can Teach", placeholder="E.g., Math, Physics")
         hourly_rate = st.number_input("Hourly Rate", min_value=0, step=1)
         if st.button("Create Teacher Profile"):
-            create_teacher_profile(
-                id=st.session_state.user_id,
-                name=st.session_state.get("user_name"),
-                phone=phone,
-                email=st.session_state.get("user_email"),
-                about_section=about_section,
-                subjects_to_teach=subjects.split(","),
-                hourly_rate=hourly_rate,
-                available_intervals=available_intervals
-            )
+            # Store in session state for backend use
+            st.session_state.phone = phone
+            st.session_state.about_section = about_section
+            st.session_state.subjects = subjects.split(",")
+            st.session_state.rate = hourly_rate
+            create_profile("Teacher")
 
 
 def create_student_profile(id, name, phone, email, about_section, subjects_interested_in_learning, available_intervals):
     """Send a request to create a student profile."""
+
+    # ✅ Validate intervals
+    validated_intervals = validate_and_convert_intervals(available_intervals)
+
     payload = {
         "id": id,
         "name": name,
         "phone": phone,
         "email": email,
         "about_section": about_section,
-        "available": available_intervals,
+        "available": validated_intervals,
         "rating": 0,
         "subjects_interested_in_learning": subjects_interested_in_learning,
         "meetings": [],
     }
+
     response = send_data("/students", data=payload)
     if response:
         st.session_state.profile_type = "Student"
@@ -320,14 +335,14 @@ def create_student_profile(id, name, phone, email, about_section, subjects_inter
 
 
 def create_teacher_profile(id, name, phone, email, about_section, subjects_to_teach, hourly_rate, available_intervals):
-    """Send a request to create a teacher profile."""
+    validated_intervals = validate_and_convert_intervals(available_intervals)
     payload = {
         "id": id,
         "name": name,
         "phone": phone,
         "email": email,
         "about_section": about_section,
-        "available": available_intervals,
+        "available": validated_intervals,
         "rating": 0,
         "subjects_to_teach": subjects_to_teach,
         "hourly_rate": hourly_rate,

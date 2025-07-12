@@ -1,3 +1,4 @@
+from typing import Optional
 import streamlit as st
 import requests
 import logging
@@ -69,45 +70,6 @@ def send_data(endpoint, data=None, method="POST"):
         logger.exception(f"Request to {endpoint} failed: {e}")
         st.error("A network error occurred. Please check your connection and try again.")
         return None
-
-
-# def send_data(endpoint, data=None, method="POST"):
-#     """
-#     Send data to a specified API endpoint using the desired HTTP method.
-#
-#     Args:
-#         endpoint (str): The API endpoint to send the data to.
-#         data (dict, optional): The payload to send to the server.
-#         method (str): The HTTP method to use (e.g., "POST", "PUT", "DELETE").
-#
-#     Returns:
-#         dict or None: The server's response (parsed JSON) on success; None on failure.
-#     """
-#     try:
-#         headers = {
-#             "Authorization": f"Bearer {st.session_state.get('token', '')}",
-#             "Content-Type": "application/json"
-#         }
-#         url = f"{BASE_URL}{endpoint}"
-#         logger.info(f"Sending {method} request to {url} with data: {data}")
-#
-#         if method == "POST":
-#             response = requests.post(url, headers=headers, json=data)
-#         elif method == "PUT":
-#             response = requests.put(url, headers=headers, json=data)
-#         elif method == "DELETE":
-#             response = requests.delete(url, headers=headers, json=data)
-#         else:
-#             logger.error(f"Unsupported HTTP method: {method}")
-#             st.error(f"Unsupported HTTP method: {method}")
-#             return None
-#
-#         # Handle response
-#         return handle_response(response)
-#     except requests.exceptions.RequestException as e:
-#         logger.exception(f"Request to {endpoint} failed: {e}")
-#         st.error("A network error occurred. Please check your connection and try again.")
-#         return None
 
 
 def get_my_meetings(user_id):
@@ -304,3 +266,27 @@ def check_existing_profile(profile_type):
             return profile  # Profile exists
 
     return None  # No profile found
+
+
+def fetch_teacher(teacher_id: str) -> Optional[dict]:
+    data = fetch_data(f"/teachers/{teacher_id}")
+    return data if isinstance(data, dict) else None
+
+
+def validate_teacher_dict(data: dict) -> Optional[dict]:
+    """
+    Lightweight frontend validation for teacher data.
+
+    Returns:
+        dict if valid, otherwise None
+    """
+    required_keys = [
+        "name", "email", "available", "subjects_to_teach", "meetings"
+    ]
+    if not isinstance(data, dict):
+        return None
+    for key in required_keys:
+        if key not in data:
+            return None
+    return data
+
