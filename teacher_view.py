@@ -8,7 +8,7 @@ def teacher_view():
     """Teacher Dashboard."""
     logger.info("Loading Teacher Dashboard.")
     st.subheader("Teacher Dashboard")
-    options = ["Manage Meetings", "Edit Availability", "Edit Profile"]
+    options = ["My Profile", "Edit Availability", "Edit Profile", "Manage Meetings"]
     choice = st.sidebar.radio("Menu", options)
 
     # -------------------------
@@ -28,7 +28,8 @@ def teacher_view():
                         ["Approve", "Cancel"],
                         key=meeting.get('id', '')
                     )
-                    if st.button(f"{action} Meeting: {meeting.get('topic', 'N/A')}", key=f"{action}_{meeting.get('id', '')}"):
+                    if st.button(f"{action} Meeting: {meeting.get('topic', 'N/A')}",
+                                 key=f"{action}_{meeting.get('id', '')}"):
                         handle_meeting_actions(meeting.get('id'), action)
                     st.write("---")
             else:
@@ -138,25 +139,101 @@ def teacher_view():
     # Edit Profile Section
     # -------------------------
     elif choice == "Edit Profile":
-        st.subheader("Edit Your Profile")
-        about_section = st.text_area("About Me", placeholder="Write about yourself...")
-        st.write("DEBUG user_id in session:", st.session_state.get("user_id"))
+        st.subheader("🛠️ Edit Your Profile")
 
-        if st.button("Update Profile"):
-            try:
-                user_id = st.session_state.user_id
-                existing_data = fetch_data(f"/teachers/{user_id}")
+        try:
+            user_id = st.session_state.user_id
+            existing_data = fetch_data(f"/teachers/{user_id}")
 
-                if not existing_data:
-                    st.error("Failed to load your profile.")
-                else:
-                    existing_data["about_section"] = about_section.strip()
+            if not existing_data:
+                st.error("Failed to load your profile.")
+            else:
+                # Extract existing values with fallbacks
+                name = existing_data.get("name", "")
+                about = existing_data.get("about_section", "")
+                hourly_rate = existing_data.get("hourly_rate", 0.0)
+                current_subjects = existing_data.get("subjects_to_teach", [])
+                phone = existing_data.get("phone", "")
+
+                # UI form
+                updated_name = st.text_input("Full Name", value=name)
+                updated_about = st.text_area("About Me", value=about)
+                updated_rate = st.number_input("Hourly Rate (USD)", min_value=0.0, value=hourly_rate, step=5.0)
+                updated_phone = st.text_input("Phone Number", value=phone)
+                all_subjects = ["Math", "Physics", "Chemistry", "Biology", "English",
+                                "Computer Science"]  # customize as needed
+                updated_subjects = st.multiselect("Subjects to Teach", options=all_subjects, default=current_subjects)
+
+                if st.button("Update Profile"):
+                    # Update payload
+                    existing_data["name"] = updated_name.strip()
+                    existing_data["about_section"] = updated_about.strip()
+                    existing_data["hourly_rate"] = updated_rate
+                    existing_data["subjects_to_teach"] = updated_subjects
+                    existing_data["phone"] = updated_phone.strip()
+
                     response = send_data(f"/teachers/{user_id}", existing_data, method="PUT")
 
                     if response:
                         st.success("Profile updated successfully!")
                     else:
                         st.error("Update failed. Try again.")
-            except Exception as e:
-                st.error("An unexpected error occurred.")
-                logger.exception("Profile update failed.")
+        except Exception as e:
+            st.error("An unexpected error occurred.")
+            logger.exception("Teacher profile update failed.")
+
+    # -------------------------
+    # My Profile Section
+    # -------------------------
+    elif choice == "My Profile":
+        st.subheader("📋 My Profile")
+
+        try:
+            user_id = st.session_state.get("user_id")
+            teacher_data = fetch_data(f"/teachers/{user_id}")
+
+            if teacher_data:
+                st.markdown("### 👤 Personal Information")
+                st.write(f"**Name:** {teacher_data.get('name', 'N/A')}")
+                st.write(f"**Email:** {teacher_data.get('email', 'N/A')}")
+                st.write(f"**Phone:** {teacher_data.get('phone', 'N/A')}")
+
+                st.markdown("### 🧾 About Me")
+                st.write(teacher_data.get("about_section", "_No info provided._"))
+
+                st.markdown("### 📚 Subjects To Teach")
+                subjects = teacher_data.get("subjects_to_teach", [])
+                st.write(", ".join(subjects) if subjects else "_None listed._")
+
+                st.markdown("### 💰 Hourly Rate & Rating")
+                st.write(f"**Hourly Rate:** ${teacher_data.get('hourly_rate', 'N/A')}")
+                st.write(f"**Rating:** {teacher_data.get('rating', 'N/A')} / 5")
+
+                st.markdown("### 🕒 Availability")
+                availability = teacher_data.get("available", [])
+                if availability:
+                    for i, interval in enumerate(availability):
+                        try:
+                            start_dt = datetime.fromisoformat(interval.get("start", ""))
+                            end_dt = datetime.fromisoformat(interval.get("end", ""))
+                            start_str = start_dt.strftime("%A, %B %d, %Y at %I:%M %p")
+                            end_str = end_dt.strftime("%A, %B %d, %Y at %I:%M %p")
+
+                            html = (
+                                f"<span style='color:gold'><strong>From:</strong></span> {start_str} → "
+                                f"<span style='color:gold'><strong>To:</strong></span> {end_str}"
+                            )
+                            st.markdown(f"{i + 1}. {html}<br>", unsafe_allow_html=True)
+
+
+                        except Exception as e:
+                            st.write(
+                                f"{i + 1}. **From:** {interval.get('start', 'N/A')} → **To:** {interval.get('end', 'N/A')}")
+                else:
+                    st.write("_No availability set._")
+
+            else:
+                st.warning("Unable to fetch profile data. Please try again later.")
+        except Exception as e:
+            logger.exception("Failed to load student profile.")
+            st.error("An unexpected error occurred while loading your profile.")

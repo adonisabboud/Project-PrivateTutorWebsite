@@ -1,36 +1,64 @@
 from server_requests import *
 import streamlit as st
-import logging
-
 from update_meeting import handle_meeting_actions
+from datetime import datetime
 
 
 def student_view():
     """Student Dashboard."""
     logger.info("Loading Student Dashboard.")
     st.subheader("Student Dashboard")
-    options = ["Available Teachers", "My Meetings", "Edit Profile", "My Profile"]
+    options = ["My Profile", "Available Teachers", "Edit Profile", "My Meetings"]
 
     choice = st.sidebar.radio("Menu", options)
 
     if choice == "Available Teachers":
-        st.subheader("Available Teachers")
+        st.subheader("🧑‍🏫 Available Teachers")
+
         try:
-            teachers = fetch_data("/teachers/")  # Fetch all teachers once
+            teachers = fetch_data("/teachers/")
             if teachers:
                 for teacher in teachers:
-                    # Skip self (if a teacher views their own data)
                     if teacher.get("id") == st.session_state.get("user_id"):
                         continue
 
-                    st.write(f"**Name:** {teacher.get('name', 'N/A')}")
-                    st.write(f"**Subjects:** {', '.join(teacher.get('subjects_to_teach', []))}")
-                    if st.button(f"Request Meeting with {teacher.get('name')}", key=teacher.get("id")):
-                        logger.info(f"Requesting meeting with teacher {teacher.get('id')}")
-                        request_meeting_with_teacher(teacher)  # Pass the teacher JSON directly
-                    st.write("---")
+                    name = teacher.get("name", "N/A")
+                    email = teacher.get("email", "N/A")
+                    phone = teacher.get("phone", "N/A")
+                    rate = teacher.get("hourly_rate", "N/A")
+                    rating = teacher.get("rating", "N/A")
+                    subjects = ", ".join(teacher.get("subjects_to_teach", []))
+                    availability = teacher.get("available", [])
+
+                    availability_str = ""
+                    for interval in availability:
+                        try:
+                            start = datetime.fromisoformat(interval["start"]).strftime("%A, %B %d, %Y at %I:%M %p")
+                            end = datetime.fromisoformat(interval["end"]).strftime("%I:%M %p")
+                            availability_str += f"📅 {start} → {end}<br>"
+                        except:
+                            availability_str += f"{interval.get('start', '')} → {interval.get('end', '')}<br>"
+
+                    st.markdown(f"""
+                        <div style='background-color:#2c2f33; padding:15px; border-radius:10px; margin-bottom:20px; color:#f0f0f0'>
+                            <h4>👤 <strong>{name}</strong></h4>
+                            <p>📧 <strong>Email:</strong> {email}<br>
+                               📞 <strong>Phone:</strong> {phone}<br>
+                               💰 <strong>Hourly Rate:</strong> ${rate}<br>
+                               ⭐ <strong>Rating:</strong> {rating}/5<br>
+                               📘 <strong>Subjects:</strong> {subjects}<br>
+                               ⏱️ <strong>Availability:</strong><br>{availability_str}</p>
+                            <form action='#'>
+                                <button style='background-color:#4CAF50; color:white; border:none; padding:10px 15px; border-radius:5px; cursor:pointer'
+                                        onclick="document.getElementById('{teacher.get("id")}').click(); return false;">
+                                    Request Meeting with {name}
+                                </button>
+                            </form>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+                    st.button(f"", key=teacher.get("id"), on_click=request_meeting_with_teacher, args=(teacher,))
             else:
-                logger.info("No teachers found.")
                 st.info("No teachers found.")
         except Exception as e:
             logger.exception("Error fetching teachers.")
@@ -56,27 +84,47 @@ def student_view():
             st.error("Failed to load meetings. Please try again later.")
 
     elif choice == "Edit Profile":
-        st.subheader("Edit Your Profile")
-        about_section = st.text_area("About Me", placeholder="Write about yourself...")
-        st.write("DEBUG user_id in session:", st.session_state.get("user_id"))
-        if st.button("Update Profile"):
-            try:
-                user_id = st.session_state.user_id
-                existing_data = fetch_data(f"/students/{user_id}")
 
-                if not existing_data:
-                    st.error("Failed to load your profile.")
-                else:
-                    existing_data["about_section"] = about_section.strip()
-                    response = send_data(f"/students/{user_id}", existing_data, method="PUT")
+        st.subheader("🛠️ Edit Your Profile")
+        user_id = st.session_state.get("user_id")
+        #st.write("DEBUG user_id in session:", user_id)
+        try:
+            existing_data = fetch_data(f"/students/{user_id}")
+            if not existing_data:
+                st.error("Failed to load your profile.")
+            else:
+                # Pre-fill form fields
+                name = st.text_input("Full Name", value=existing_data.get("name", ""))
+                about_section = st.text_area("About Me", value=existing_data.get("about_section", ""))
+                phone = st.text_input("Phone Number", value=existing_data.get("phone", ""))
+                all_subjects = [
 
-                    if response:
-                        st.success("Profile updated successfully!")
-                    else:
-                        st.error("Update failed. Try again.")
-            except Exception as e:
-                st.error("An unexpected error occurred.")
-                logger.exception("Profile update failed.")
+                    "Math", "Physics", "Chemistry", "Biology",
+
+                    "English", "Computer Science", "History", "Economics"
+                ]
+                selected_subjects = st.multiselect(
+                    "Subjects Interested In", options=all_subjects,
+                    default=existing_data.get("subjects_interested_in_learning", []))
+
+                if st.button("Update Profile"):
+                    try:
+                        updated_data = existing_data.copy()
+                        updated_data["name"] = name.strip()
+                        updated_data["about_section"] = about_section.strip()
+                        updated_data["phone"] = phone.strip()
+                        updated_data["subjects_interested_in_learning"] = selected_subjects
+                        response = send_data(f"/students/{user_id}", updated_data, method="PUT")
+                        if response:
+                            st.success("Profile updated successfully!")
+                        else:
+                            st.error("Update failed. Try again.")
+                    except Exception as e:
+                        logger.exception("Profile update failed.")
+                        st.error("An unexpected error occurred while updating your profile.")
+        except Exception as e:
+            logger.exception("Failed to load student profile for editing.")
+            st.error("An unexpected error occurred while loading your profile.")
 
     elif choice == "My Profile":
         st.subheader("📋 My Profile")
@@ -102,9 +150,20 @@ def student_view():
                 availability = student_data.get("available", [])
                 if availability:
                     for i, interval in enumerate(availability):
-                        start = interval.get("start", "N/A")
-                        end = interval.get("end", "N/A")
-                        st.write(f"{i + 1}. **From:** {start} → **To:** {end}")
+                        try:
+                            start_dt = datetime.fromisoformat(interval.get("start", ""))
+                            end_dt = datetime.fromisoformat(interval.get("end", ""))
+                            start_str = start_dt.strftime("%A, %B %d, %Y at %I:%M %p")
+                            end_str = end_dt.strftime("%A, %B %d, %Y at %I:%M %p")
+
+                            html = (
+                                f"<span style='color:gold'><strong>From:</strong></span> {start_str} → "
+                                f"<span style='color:gold'><strong>To:</strong></span> {end_str}"
+                            )
+                            st.markdown(f"{i + 1}. {html}", unsafe_allow_html=True)
+                        except Exception as e:
+                            st.write(
+                                f"{i + 1}. **From:** {interval.get('start', 'N/A')} → **To:** {interval.get('end', 'N/A')}")
                 else:
                     st.write("_No availability set._")
 

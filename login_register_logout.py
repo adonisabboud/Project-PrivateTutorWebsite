@@ -16,7 +16,7 @@ def login(email, password):
     try:
         payload = {"email": email, "password": password}
         result = send_data("/users/login", data=payload, method="POST")
-        st.write("Login response:", result)  # 🔍 Debug output
+        #st.write("Login response:", result)  # 🔍 Debug output
 
         if result and "user_id" in result:
             logger.info(f"Login successful for user {email}")
