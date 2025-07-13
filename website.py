@@ -248,7 +248,7 @@ def render_profile_creation():
             st.session_state.profile_type = profile_type
             st.session_state.navigation = "main_app"
             st.success("Proceeding to the next step...")
-        #st.json(existing_profile)
+        # st.json(existing_profile)
         return
 
     # Inputs
@@ -374,25 +374,6 @@ def render_main_app():
         student_view()
     elif st.session_state.profile_type == "Teacher":
         teacher_view()
-
-    # st.header("Your Meetings")
-    # user_id = st.session_state.get("user_id")
-    # if not user_id:
-    #     st.error("No user ID found. Please log in again.")
-    #     return
-    #
-    # meetings = fetch_user_meetings(user_id)
-    #
-    # if meetings:
-    #     for meeting in meetings:
-    #         st.write(f"**Subject**: {meeting['subject']}")
-    #         st.write(f"**Location**: {meeting['location']}")
-    #         st.write(f"**Start Time**: {meeting['start_time']}")
-    #         st.write(f"**Finish Time**: {meeting['finish_time']}")
-    #         st.write(f"**Participants**: {', '.join(meeting['people'])}")
-    #         st.markdown("---")
-    # else:
-    #     st.info("You have no scheduled meetings.")
 
 
 if __name__ == "__main__":
